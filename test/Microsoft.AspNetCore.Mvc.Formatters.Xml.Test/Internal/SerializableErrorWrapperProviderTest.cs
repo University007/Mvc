@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using Microsoft.AspNetCore.Testing;
 using Xunit;
 
 namespace Microsoft.AspNetCore.Mvc.Formatters.Xml.Internal
@@ -49,7 +50,8 @@ namespace Microsoft.AspNetCore.Mvc.Formatters.Xml.Internal
 
             // Act and Assert
             var exception = Assert.Throws<ArgumentException>(() => wrapperProvider.Wrap(person));
-            Assert.Equal(expectedMessage, exception.Message);
+            Assert.Equal("original", exception.ParamName);
+            Assert.Contains("'Person'", exception.Message);
         }
     }
 }

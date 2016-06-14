@@ -5,10 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Mvc.DataAnnotations.Internal;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.TestCommon;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Testing;
 using Microsoft.Extensions.WebEncoders.Testing;
 using Xunit;
 
@@ -21,9 +24,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         {
             // Arrange
             // Mono issue - https://github.com/aspnet/External/issues/19
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Boolean");
             var expected = PlatformNormalizer.NormalizeContent(
                 @"<input checked=""HtmlEncode[[checked]]"" data-val=""HtmlEncode[[true]]"" " +
-                @"data-val-required=""HtmlEncode[[The Boolean field is required.]]"" id=""HtmlEncode[[Property3]]"" " +
+                $@"data-val-required=""HtmlEncode[[{requiredMessage}]]"" id=""HtmlEncode[[Property3]]"" " +
                 @"name=""HtmlEncode[[Property3]]"" type=""HtmlEncode[[checkbox]]"" " +
                 @"value=""HtmlEncode[[false]]"" /><input name=""HtmlEncode[[Property3]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
             var helper = DefaultTemplatesUtilities.GetHtmlHelper(GetTestModelViewData());
@@ -34,17 +38,18 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
                                        htmlAttributes: new { @checked = "checked", value = "false" });
 
             // Assert
-            Assert.Equal(expected, HtmlContentUtilities.HtmlContentToString(html));
+            Assert.Equal(HtmlContentUtilities.HtmlContentToString(html), expected);
         }
 
         [Fact]
         public void CheckBoxExplicitParametersOverrideDictionary_ForValueInModel()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Boolean");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
                 @"<input checked=""HtmlEncode[[checked]]"" data-val=""HtmlEncode[[true]]"" " +
-                @"data-val-required=""HtmlEncode[[The Boolean field is required.]]"" id=""HtmlEncode[[Property3]]"" " +
+                $@"data-val-required=""HtmlEncode[[{requiredMessage}]]"" id=""HtmlEncode[[Property3]]"" " +
                 @"name=""HtmlEncode[[Property3]]"" type=""HtmlEncode[[checkbox]]"" " +
                 @"value=""HtmlEncode[[false]]"" /><input name=""HtmlEncode[[Property3]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
 
@@ -80,23 +85,24 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxWithInvalidBooleanThrows()
         {
             // Arrange
-            var expected = "String was not recognized as a valid Boolean.";
             var helper = DefaultTemplatesUtilities.GetHtmlHelper(GetTestModelViewData());
 
             // Act & Assert
             var ex = Assert.Throws<FormatException>(
                         () => helper.CheckBox("Property2", isChecked: null, htmlAttributes: null));
-            Assert.Equal(expected, ex.Message);
+            Assert.Contains("Boolean", ex.Message);
+            Assert.Contains("String", ex.Message);
         }
 
         [Fact]
         public void CheckBoxWithNullExpressionThrows()
         {
             // Arrange
-            var expected = "The name of an HTML field cannot be null or empty. Instead use methods " +
-                "Microsoft.AspNetCore.Mvc.Rendering.IHtmlHelper.Editor or Microsoft.AspNetCore.Mvc.Rendering." +
-                "IHtmlHelper`1.EditorFor with a non-empty htmlFieldName argument value." +
-                Environment.NewLine + "Parameter name: expression";
+            var expected = new ArgumentException(
+                "The name of an HTML field cannot be null or empty. Instead use methods " +
+                    "Microsoft.AspNetCore.Mvc.Rendering.IHtmlHelper.Editor or Microsoft.AspNetCore.Mvc.Rendering." +
+                    "IHtmlHelper`1.EditorFor with a non-empty htmlFieldName argument value.",
+                "expression").Message;
 
             var helper = DefaultTemplatesUtilities.GetHtmlHelper(GetTestModelViewData());
 
@@ -112,10 +118,11 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxCheckedWithOnlyName_GeneratesExpectedValue()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Boolean");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
                 @"<input checked=""HtmlEncode[[checked]]"" data-val=""HtmlEncode[[true]]"" " +
-                @"data-val-required=""HtmlEncode[[The Boolean field is required.]]"" id=""HtmlEncode[[Property1]]"" " +
+                $@"data-val-required=""HtmlEncode[[{requiredMessage}]]"" id=""HtmlEncode[[Property1]]"" " +
                 @"name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[checkbox]]"" " +
                 @"value=""HtmlEncode[[true]]"" /><input name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
             var helper = DefaultTemplatesUtilities.GetHtmlHelper(GetTestModelViewData());
@@ -131,10 +138,11 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBox_WithCanRenderAtEndOfFormSet_DoesNotGenerateInlineHiddenTag()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Boolean");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
                 @"<input checked=""HtmlEncode[[checked]]"" data-val=""HtmlEncode[[true]]"" " +
-                @"data-val-required=""HtmlEncode[[The Boolean field is required.]]"" id=""HtmlEncode[[Property1]]"" " +
+                $@"data-val-required=""HtmlEncode[[{requiredMessage}]]"" id=""HtmlEncode[[Property1]]"" " +
                 @"name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[checkbox]]"" " +
                 @"value=""HtmlEncode[[true]]"" />");
             var helper = DefaultTemplatesUtilities.GetHtmlHelper(GetTestModelViewData());
@@ -157,9 +165,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxUsesAttemptedValueFromModelState()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Boolean");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
-                @"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[The Boolean field is required.]]"" " +
+                $@"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[{requiredMessage}]]"" " +
                 @"id=""HtmlEncode[[Property1]]"" name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" />" +
                 @"<input name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
 
@@ -341,9 +350,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxGeneratesUnobtrusiveValidationAttributes()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Name");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
-                @"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[The Name field is required.]]"" id=""HtmlEncode[[Name]]""" +
+                $@"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[{requiredMessage}]]"" id=""HtmlEncode[[Name]]""" +
                 @" name=""HtmlEncode[[Name]]"" type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" />" +
                 @"<input name=""HtmlEncode[[Name]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
             var helper = DefaultTemplatesUtilities.GetHtmlHelper(GetModelWithValidationViewData());
@@ -359,10 +369,11 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxReplacesUnderscoresInHtmlAttributesWithDashes()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Boolean");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
                 @"<input checked=""HtmlEncode[[checked]]"" data-val=""HtmlEncode[[true]]"" " +
-                @"data-val-required=""HtmlEncode[[The Boolean field is required.]]"" id=""HtmlEncode[[Property1]]"" " +
+                $@"data-val-required=""HtmlEncode[[{requiredMessage}]]"" id=""HtmlEncode[[Property1]]"" " +
                 @"name=""HtmlEncode[[Property1]]"" Property1-Property3=""HtmlEncode[[Property3ObjValue]]"" " +
                 @"type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" /><input " +
                 @"name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
@@ -418,9 +429,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxInTemplate_WithEmptyExpression_GeneratesExpectedValue()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Boolean");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
-                @"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[The Boolean field is required.]]"" " +
+                $@"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[{requiredMessage}]]"" " +
                 @"id=""HtmlEncode[[MyPrefix]]"" name=""HtmlEncode[[MyPrefix]]"" Property3=""HtmlEncode[[Property3Value]]"" " +
                 @"type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" /><input name=""HtmlEncode[[MyPrefix]]"" type=""HtmlEncode[[hidden]]"" " +
                 @"value=""HtmlEncode[[false]]"" />");
@@ -439,10 +451,11 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxWithComplexExpressionsEvaluatesValuesInViewDataDictionary()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Boolean");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
                 @"<input checked=""HtmlEncode[[checked]]"" data-val=""HtmlEncode[[true]]"" " +
-                @"data-val-required=""HtmlEncode[[The Boolean field is required.]]"" id=""HtmlEncode[[ComplexProperty_Property1]]"" " +
+                $@"data-val-required=""HtmlEncode[[{requiredMessage}]]"" id=""HtmlEncode[[ComplexProperty_Property1]]"" " +
                 @"name=""HtmlEncode[[ComplexProperty." +
                 @"Property1]]"" type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" /><input name=""HtmlEncode[[ComplexProperty.Property1]]""" +
                 @" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
@@ -459,9 +472,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxForWithNullContainer_TreatsBooleanAsFalse()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Property1");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
-                @"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[The Property1 field is required.]]"" " +
+                $@"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[{requiredMessage}]]"" " +
                 @"id=""HtmlEncode[[Property1]]"" name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" />" +
                 @"<input name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
             var viewData = GetTestModelViewData();
@@ -481,9 +495,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxForWithNonNullContainer_UsesPropertyValue(bool value, string expectedChecked)
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Property1");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
-                @"<input {0}data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[The Property1 field is required.]]"" " +
+                $@"<input {{0}}data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[{requiredMessage}]]"" " +
                 @"id=""HtmlEncode[[Property1]]"" name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" />" +
                 @"<input name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
             expected = string.Format(expected, expectedChecked);
@@ -507,10 +522,11 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxForOverridesCalculatedParametersWithValuesFromHtmlAttributes()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Property3");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
                 @"<input checked=""HtmlEncode[[checked]]"" data-val=""HtmlEncode[[true]]"" " +
-                @"data-val-required=""HtmlEncode[[The Property3 field is required.]]"" " +
+                $@"data-val-required=""HtmlEncode[[{requiredMessage}]]"" " +
                 @"id=""HtmlEncode[[Property3]]"" name=""HtmlEncode[[Property3]]"" type=""HtmlEncode[[checkbox]]"" " +
                 @"value=""HtmlEncode[[false]]"" /><input name=""HtmlEncode[[Property3]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
             var helper = DefaultTemplatesUtilities.GetHtmlHelper(GetTestModelViewData());
@@ -526,9 +542,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxForGeneratesUnobtrusiveValidationAttributes()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Name");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
-                @"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[The Name field is required.]]"" id=""HtmlEncode[[Name]]""" +
+                $@"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[{requiredMessage}]]"" id=""HtmlEncode[[Name]]""" +
                 @" name=""HtmlEncode[[Name]]"" type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" />" +
                 @"<input name=""HtmlEncode[[Name]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
             var metadataProvider = TestModelMetadataProvider.CreateDefaultProvider();
@@ -551,9 +568,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxFor_UsesModelStateAttemptedValue(string attemptedValue, string expectedChecked)
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Property1");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
-                @"<input {0}data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[The Property1 field is required.]]"" " +
+                $@"<input {{0}}data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[{requiredMessage}]]"" " +
                 @"id=""HtmlEncode[[Property1]]"" name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" />" +
                 @"<input name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
             expected = string.Format(expected, expectedChecked);
@@ -573,9 +591,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxFor_WithObjectAttribute_MapsUnderscoresInNamesToDashes()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Property1");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
-                @"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[The Property1 field is required.]]"" " +
+                $@"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[{requiredMessage}]]"" " +
                 @"id=""HtmlEncode[[Property1]]"" name=""HtmlEncode[[Property1]]"" " +
                 @"Property1-Property3=""HtmlEncode[[Property3ObjValue]]"" type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" /><input " +
                 @"name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
@@ -593,9 +612,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxFor_WithAttributeDictionary_GeneratesExpectedAttributes()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Property1");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
-                @"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[The Property1 field is required.]]"" " +
+                $@"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[{requiredMessage}]]"" " +
                 @"id=""HtmlEncode[[Property1]]"" name=""HtmlEncode[[Property1]]"" " +
                 @"Property3=""HtmlEncode[[Property3Value]]"" type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" /><input " +
                 @"name=""HtmlEncode[[Property1]]"" type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");
@@ -613,9 +633,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxForInTemplate_GeneratesExpectedValue()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Property1");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
-                @"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[The Property1 field is required.]]"" " +
+                $@"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[{requiredMessage}]]"" " +
                 @"id=""HtmlEncode[[MyPrefix_Property1]]"" name=""HtmlEncode[[MyPrefix.Property1]]"" Property3=""HtmlEncode[[PropValue]]"" " +
                 @"type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" /><input name=""HtmlEncode[[MyPrefix.Property1]]"" type=""HtmlEncode[[hidden]]"" " +
                 @"value=""HtmlEncode[[false]]"" />");
@@ -634,9 +655,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
         public void CheckBoxFor_WithComplexExpressions_DoesNotUseValuesFromViewDataDictionary()
         {
             // Arrange
+            var requiredMessage = new RequiredAttribute().FormatErrorMessage("Property1");
             // Mono issue - https://github.com/aspnet/External/issues/19
             var expected = PlatformNormalizer.NormalizeContent(
-                @"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[The Property1 field is required.]]"" " +
+                $@"<input data-val=""HtmlEncode[[true]]"" data-val-required=""HtmlEncode[[{requiredMessage}]]"" " +
                 @"id=""HtmlEncode[[ComplexProperty_Property1]]"" name=""HtmlEncode[[ComplexProperty." +
                 @"Property1]]"" type=""HtmlEncode[[checkbox]]"" value=""HtmlEncode[[true]]"" /><input name=""HtmlEncode[[ComplexProperty.Property1]]"" " +
                 @"type=""HtmlEncode[[hidden]]"" value=""HtmlEncode[[false]]"" />");

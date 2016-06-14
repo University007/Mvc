@@ -131,10 +131,10 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
             var helper = DefaultTemplatesUtilities.GetHtmlHelper(GetViewDataWithModelStateAndModelAndViewDataValues());
             var name = string.Empty;
             var value = string.Empty;
-            var expected = "The name of an HTML field cannot be null or empty. Instead use methods " +
+            var expectedMessage = "The name of an HTML field cannot be null or empty. Instead use methods " +
                 "Microsoft.AspNetCore.Mvc.Rendering.IHtmlHelper.Editor or Microsoft.AspNetCore.Mvc.Rendering." +
-                "IHtmlHelper`1.EditorFor with a non-empty htmlFieldName argument value." +
-                Environment.NewLine + "Parameter name: expression";
+                "IHtmlHelper`1.EditorFor with a non-empty htmlFieldName argument value.";
+            var expected = new ArgumentException(expectedMessage, "expression").Message;
 
             // Act and Assert
             ExceptionAssert.ThrowsArgument(

@@ -34,7 +34,6 @@ namespace Microsoft.AspNetCore.Mvc.Internal
             var value = "a/dkfk";
             var action = CreateAction("InvalidTemplate", "{" + value + "}");
 
-            var handler = CreateRouter();
             var services = CreateServices(action);
 
             var route = AttributeRouting.CreateAttributeMegaRoute(services);
@@ -60,7 +59,7 @@ namespace Microsoft.AspNetCore.Mvc.Internal
                 "For action: 'DisallowedParameter'" + Environment.NewLine +
                 "Error: The attribute route '{foo}/{action}' cannot contain a parameter named '{foo}'. " +
                 "Use '[foo]' in the route template to insert the value 'bleh'.";
-            
+
             var services = CreateServices(action);
 
             var route = AttributeRouting.CreateAttributeMegaRoute(services);
@@ -94,7 +93,7 @@ namespace Microsoft.AspNetCore.Mvc.Internal
                 "For action: 'DisallowedParameter2'" + Environment.NewLine +
                 "Error: The attribute route 'cool/{action}' cannot contain a parameter named '{action}'. " +
                 "Use '[action]' in the route template to insert the value 'hey'.";
-            
+
             var services = CreateServices(action1, action2);
 
             var route = AttributeRouting.CreateAttributeMegaRoute(services);
